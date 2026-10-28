@@ -1,0 +1,241 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  CANDIDATE
+  HIRER
+  ADMIN
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  FREELANCE
+  CONTRACT
+  INTERNSHIP
+}
+
+enum WorkMode {
+  REMOTE
+  HYBRID
+  ONSITE
+}
+
+enum JobStatus {
+  DRAFT
+  PENDING
+  PUBLISHED
+  PAUSED
+  CLOSED
+  REJECTED
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWING
+  SHORTLISTED
+  INTERVIEWING
+  HIRED
+  REJECTED
+  WITHDRAWN
+}
+
+enum ApplicationSource {
+  DIRECT
+  REFERRAL
+  ADMIN_IMPORT
+}
+
+enum ReportStatus {
+  OPEN
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+model User {
+  id               String            @id @default(cuid())
+  email            String            @unique
+  name             String?
+  avatarUrl        String?
+  role             UserRole
+  phone            String?
+  isActive         Boolean           @default(true)
+  candidateProfile CandidateProfile?
+  hirerProfile     HirerProfile?
+  jobsCreated      Job[]             @relation("JobsCreated")
+  applications     Application[]     @relation("Applications")
+  referralsShared  JobReferral[]     @relation("ReferralsShared")
+  reportsCreated   JobReport[]       @relation("ReportsCreated")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([role])
+}
+
+model CandidateProfile {
+  id                String     @id @default(cuid())
+  userId            String     @unique
+  headline          String?
+  bio               String?
+  city              String?
+  yearsExperience   Int?
+  expectedSalaryMin Int?
+  expectedSalaryMax Int?
+  preferredModes    WorkMode[]
+  skills            String[]
+  cvUrl             String?
+  portfolioUrl      String?
+  isOpenToWork      Boolean    @default(true)
+  completenessScore Int        @default(0)
+  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+}
+
+model Company {
+  id               String             @id @default(cuid())
+  name             String
+  slug             String             @unique
+  website          String?
+  location         String?
+  companySize      String?
+  description      String?
+  verifiedStatus   VerificationStatus @default(PENDING)
+  hirerProfiles    HirerProfile[]
+  jobs             Job[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([verifiedStatus])
+}
+
+model HirerProfile {
+  id             String             @id @default(cuid())
+  userId         String             @unique
+  companyId      String?
+  title          String?
+  description    String?
+  website        String?
+  verifiedStatus VerificationStatus @default(PENDING)
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company        Company?           @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([companyId])
+  @@index([verifiedStatus])
+}
+
+model Job {
+  id             String         @id @default(cuid())
+  slug           String         @unique
+  title          String
+  summary        String
+  description    String
+  location       String?
+  employmentType EmploymentType
+  workMode       WorkMode
+  budgetMin      Int?
+  budgetMax      Int?
+  currency       String         @default("VND")
+  skills         String[]
+  openings       Int            @default(1)
+  urgent         Boolean        @default(false)
+  status         JobStatus      @default(PENDING)
+  expiresAt      DateTime?
+  publishedAt    DateTime?
+  createdById    String
+  companyId      String?
+  createdBy      User           @relation("JobsCreated", fields: [createdById], references: [id], onDelete: Restrict)
+  company        Company?       @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  applications   Application[]
+  referrals      JobReferral[]
+  reports        JobReport[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([status, workMode])
+  @@index([companyId])
+  @@index([createdById])
+  @@index([publishedAt])
+  @@index([expiresAt])
+}
+
+model Application {
+  id             String            @id @default(cuid())
+  jobId          String
+  candidateId    String
+  referralId     String?
+  coverNote      String?
+  portfolioUrl   String?
+  expectedSalary Int?
+  source         ApplicationSource @default(DIRECT)
+  status         ApplicationStatus @default(PENDING)
+  appliedAt      DateTime          @default(now())
+  reviewedAt     DateTime?
+  job            Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidate      User              @relation("Applications", fields: [candidateId], references: [id], onDelete: Restrict)
+  referral       JobReferral?      @relation(fields: [referralId], references: [id], onDelete: SetNull)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@unique([jobId, candidateId])
+  @@index([candidateId, status])
+  @@index([jobId, status])
+  @@index([referralId])
+}
+
+model JobReferral {
+  id             String        @id @default(cuid())
+  jobId          String
+  sharerUserId   String?
+  code           String        @unique
+  channel        String?
+  clicks         Int           @default(0)
+  applies        Int           @default(0)
+  hires          Int           @default(0)
+  rewardAmount   Int?
+  rewardCurrency String        @default("VND")
+  job            Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  sharerUser     User?         @relation("ReferralsShared", fields: [sharerUserId], references: [id], onDelete: SetNull)
+  applications   Application[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([jobId])
+  @@index([sharerUserId])
+}
+
+model JobReport {
+  id          String       @id @default(cuid())
+  jobId       String
+  reporterId  String?
+  reason      String
+  details     String?
+  status      ReportStatus @default(OPEN)
+  job         Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  reporter    User?        @relation("ReportsCreated", fields: [reporterId], references: [id], onDelete: SetNull)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([jobId, status])
+  @@index([reporterId])
+}
