@@ -4,7 +4,7 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { SectionCard } from "@/components/section-card";
 import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
-import { getJobsByStatus, hirerSummary } from "@/lib/marketplace-data";
+import { getHirerDashboard } from "@/lib/marketplace-repository";
 import { getJobStatusMeta } from "@/lib/status";
 
 export const metadata: Metadata = {
@@ -13,10 +13,14 @@ export const metadata: Metadata = {
     "Luong san pham danh cho nha tuyen dung SME: dang job nhanh, nhan ung vien va mo rong bang referral.",
 };
 
-export default function HirerPage() {
-  const publishedJobs = getJobsByStatus("published");
-  const pendingJobs = getJobsByStatus("pending");
-  const pausedJobs = getJobsByStatus("paused");
+export const instant = false;
+
+export default async function HirerPage(props: PageProps<"/hirer">) {
+  const data = await getHirerDashboard();
+  const searchParams = await props.searchParams;
+  const publishedJobs = data.jobs.filter((job) => job.status === "published");
+  const pendingJobs = data.jobs.filter((job) => job.status === "pending");
+  const pausedJobs = data.jobs.filter((job) => job.status === "paused");
 
   return (
     <DashboardShell
@@ -28,11 +32,17 @@ export default function HirerPage() {
         { href: "/hirer/jobs", label: "Quan ly jobs" },
       ]}
     >
+      {searchParams.pipeline ? (
+        <div className="mb-6 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800">
+          Pipeline ung vien da duoc cap nhat.
+        </div>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-4">
         <StatCard
           label="Cong ty"
-          value={hirerSummary.companyName}
-          hint={hirerSummary.verified ? "Da xac minh" : "Chua xac minh"}
+          value={data.hirer.companyName}
+          hint={data.hirer.verified ? "Da xac minh" : "Chua xac minh"}
         />
         <StatCard
           label="Job dang hien"
@@ -53,15 +63,15 @@ export default function HirerPage() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <SectionCard
-          title={`${hirerSummary.ownerName} • ${hirerSummary.title}`}
+          title={`${data.hirer.ownerName} • ${data.hirer.title}`}
           description="Ho so nha tuyen dung mau cho startup launch phase."
         >
           <div className="flex flex-wrap gap-3">
             <StatusBadge
-              label={hirerSummary.verified ? "Verified" : "Pending"}
-              tone={hirerSummary.verified ? "emerald" : "amber"}
+              label={data.hirer.verified ? "Verified" : "Pending"}
+              tone={data.hirer.verified ? "emerald" : "amber"}
             />
-            <StatusBadge label={`${hirerSummary.activeJobs} active jobs`} tone="sky" />
+            <StatusBadge label={`${data.hirer.activeJobs} active jobs`} tone="sky" />
           </div>
           <p className="mt-5 text-sm leading-7 text-slate-600">
             Vai tro nay can di qua onboarding, tao cong ty, chon niche job va
@@ -90,7 +100,7 @@ export default function HirerPage() {
       <div className="mt-6">
         <SectionCard
           title="Snapshot cac job chinh"
-          description="Preview nhanh de nha tuyen dung nhay vao job detail va applicant list."
+          description="Preview nhanh de nha tuyen dung nhay vao job detail, applicant list va cap nhat pipeline."
         >
           <div className="grid gap-4">
             {publishedJobs.slice(0, 3).map((job) => {

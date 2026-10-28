@@ -4,10 +4,7 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { SectionCard } from "@/components/section-card";
 import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
-import {
-  candidateSummary,
-  getCandidateApplications,
-} from "@/lib/marketplace-data";
+import { getCandidateDashboard } from "@/lib/marketplace-repository";
 import { getApplicationStatusMeta } from "@/lib/status";
 
 export const metadata: Metadata = {
@@ -16,8 +13,15 @@ export const metadata: Metadata = {
     "Luong san pham danh cho ung vien: tao profile, apply nhanh va theo doi trang thai ung tuyen.",
 };
 
-export default function CandidatePage() {
-  const applications = getCandidateApplications(candidateSummary.id);
+export const instant = false;
+
+export default async function CandidatePage(
+  props: PageProps<"/candidate">,
+) {
+  const data = await getCandidateDashboard();
+  const applications = data.applications;
+  const candidate = data.candidate;
+  const searchParams = await props.searchParams;
 
   return (
     <DashboardShell
@@ -32,12 +36,12 @@ export default function CandidatePage() {
       <div className="grid gap-6 lg:grid-cols-4">
         <StatCard
           label="Profile score"
-          value={`${candidateSummary.profileScore}%`}
+          value={`${candidate.profileScore}%`}
           hint="Muc tieu > 90% de apply 1 cham hieu qua hon."
         />
         <StatCard
           label="Ky nang chinh"
-          value={candidateSummary.skills.length.toString()}
+          value={candidate.skills.length.toString()}
           hint="Da gom Content, SEO, Landing va Analytics."
         />
         <StatCard
@@ -54,13 +58,19 @@ export default function CandidatePage() {
         />
       </div>
 
+      {searchParams.updated ? (
+        <div className="mt-6 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800">
+          Da cap nhat profile candidate trong mock runtime store.
+        </div>
+      ) : null}
+
       <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <SectionCard
-          title={candidateSummary.name}
-          description={`${candidateSummary.headline} • ${candidateSummary.city}`}
+          title={candidate.name}
+          description={`${candidate.headline} • ${candidate.city}`}
         >
           <div className="flex flex-wrap gap-3">
-            {candidateSummary.workModes.map((mode) => (
+            {candidate.workModes.map((mode) => (
               <StatusBadge key={mode} label={mode} tone="emerald" />
             ))}
           </div>
@@ -70,7 +80,7 @@ export default function CandidatePage() {
             onboarding va dung lam ho so apply mac dinh.
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
-            {candidateSummary.skills.map((skill) => (
+            {candidate.skills.map((skill) => (
               <span
                 key={skill}
                 className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600"

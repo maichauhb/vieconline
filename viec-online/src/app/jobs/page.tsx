@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { JobCard } from "@/components/job-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { featuredJobs } from "@/lib/site-data";
+import { getPublicJobs } from "@/lib/marketplace-repository";
 
 export const metadata: Metadata = {
   title: "Viec lam | Viec Online",
@@ -11,7 +11,9 @@ export const metadata: Metadata = {
     "Danh sach viec online cho SME va startup: content, design, sales, CSKH va marketing.",
 };
 
-export default function JobsPage() {
+export default async function JobsPage() {
+  const jobs = await getPublicJobs();
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
       <SiteHeader />
@@ -45,8 +47,24 @@ export default function JobsPage() {
         </section>
 
         <section className="mt-10 grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-          {featuredJobs.map((job) => (
-            <JobCard key={job.id} job={job} />
+          {jobs.map((job) => (
+            <JobCard
+              key={job.id}
+              job={{
+                id: job.id,
+                title: job.title,
+                slug: job.slug,
+                company: job.company,
+                location: job.location,
+                type: job.employmentType,
+                mode: job.workMode,
+                salary: job.salary,
+                summary: job.summary,
+                description: job.description,
+                skills: job.skills,
+                urgent: job.urgent,
+              }}
+            />
           ))}
         </section>
       </main>

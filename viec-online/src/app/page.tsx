@@ -3,15 +3,17 @@ import Link from "next/link";
 import { JobCard } from "@/components/job-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { getFeaturedJobCards } from "@/lib/marketplace-repository";
 import {
-  featuredJobs,
   processSteps,
   roadmapItems,
   stats,
   valueProps,
 } from "@/lib/site-data";
 
-export default function Home() {
+export default async function Home() {
+  const featuredJobs = await getFeaturedJobCards();
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
       <SiteHeader />

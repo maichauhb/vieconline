@@ -1,9 +1,9 @@
 import Link from "next/link";
 
-import type { JobItem } from "@/lib/site-data";
+import type { JobCardItem } from "@/lib/marketplace-repository";
 
 type JobCardProps = {
-  job: JobItem;
+  job: JobCardItem;
 };
 
 export function JobCard({ job }: JobCardProps) {

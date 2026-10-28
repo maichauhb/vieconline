@@ -1,24 +1,25 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { applyToJobAction } from "@/app/actions/marketplace";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { featuredJobs } from "@/lib/site-data";
+import {
+  getJobDetailBySlug,
+  getPublicJobs,
+} from "@/lib/marketplace-repository";
 
 export function generateStaticParams() {
-  return featuredJobs.map((job) => ({
-    slug: job.slug,
-  }));
+  return getPublicJobs().then((jobs) => jobs.map((job) => ({ slug: job.slug })));
 }
 
 export async function generateMetadata(
   props: PageProps<"/jobs/[slug]">,
 ): Promise<Metadata> {
   const { slug } = await props.params;
-  const job = featuredJobs.find((item) => item.slug === slug);
+  const job = await getJobDetailBySlug(slug);
 
-  if (!job) {
+  if (!job || job.status !== "published") {
     return {
       title: "Khong tim thay job | Viec Online",
     };
@@ -32,9 +33,9 @@ export async function generateMetadata(
 
 export default async function JobDetailPage(props: PageProps<"/jobs/[slug]">) {
   const { slug } = await props.params;
-  const job = featuredJobs.find((item) => item.slug === slug);
+  const job = await getJobDetailBySlug(slug);
 
-  if (!job) {
+  if (!job || job.status !== "published") {
     notFound();
   }
 
@@ -46,10 +47,10 @@ export default async function JobDetailPage(props: PageProps<"/jobs/[slug]">) {
         <section className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm shadow-slate-950/5">
           <div className="flex flex-wrap items-center gap-3">
             <span className="rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
-              {job.mode}
+              {job.workMode}
             </span>
             <span className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-600">
-              {job.type}
+              {job.employmentType}
             </span>
             {job.urgent ? (
               <span className="rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-700">
@@ -79,7 +80,7 @@ export default async function JobDetailPage(props: PageProps<"/jobs/[slug]">) {
                 Kieu cong viec
               </p>
               <p className="mt-2 text-lg font-semibold text-slate-950">
-                {job.type}
+                {job.employmentType}
               </p>
             </div>
             <div className="rounded-3xl bg-slate-50 p-5">
@@ -87,7 +88,7 @@ export default async function JobDetailPage(props: PageProps<"/jobs/[slug]">) {
                 Hinh thuc
               </p>
               <p className="mt-2 text-lg font-semibold text-slate-950">
-                {job.mode}
+                {job.workMode}
               </p>
             </div>
           </div>
@@ -131,27 +132,47 @@ export default async function JobDetailPage(props: PageProps<"/jobs/[slug]">) {
               Apply flow
             </p>
             <h2 className="mt-4 text-2xl font-semibold">
-              Day la vi tri phu hop cho CTA apply trong MVP
+              Apply 1 cham tu profile candidate
             </h2>
             <p className="mt-4 text-sm leading-7 text-slate-600">
-              Khi noi auth va database, card nay se tro thanh form ung tuyen 1
-              cham tu profile ung vien.
+              Form nay da duoc noi vao server action. Khi nop don, candidate
+              applications va hirer pipeline se duoc cap nhat trong runtime
+              store.
             </p>
 
-            <div className="mt-6 flex flex-col gap-3">
-              <Link
-                href="/candidate"
-                className="inline-flex items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            <form action={applyToJobAction} className="mt-6 space-y-4">
+              <input type="hidden" name="jobSlug" value={job.slug} />
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Nguon apply
+                </label>
+                <select
+                  name="source"
+                  defaultValue="direct"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none ring-0"
+                >
+                  <option value="direct">Direct</option>
+                  <option value="referral">Referral</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Loi nhan ngan
+                </label>
+                <textarea
+                  name="note"
+                  rows={5}
+                  defaultValue={`Em quan tam vi tri ${job.title} va da co portfolio phu hop voi output cua job nay.`}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-700 outline-none ring-0"
+                />
+              </div>
+              <button
+                type="submit"
+                className="inline-flex w-full items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
               >
-                Toi luong ung vien
-              </Link>
-              <Link
-                href="/jobs"
-                className="inline-flex items-center justify-center rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-950 hover:text-slate-950"
-              >
-                Quay lai danh sach
-              </Link>
-            </div>
+                Nop don ngay
+              </button>
+            </form>
           </div>
 
           <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm shadow-slate-950/5">

@@ -3,10 +3,7 @@ import type { Metadata } from "next";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { SectionCard } from "@/components/section-card";
 import { StatusBadge } from "@/components/status-badge";
-import {
-  candidateSummary,
-  getCandidateApplications,
-} from "@/lib/marketplace-data";
+import { getCandidateDashboard } from "@/lib/marketplace-repository";
 import { getApplicationStatusMeta } from "@/lib/status";
 
 export const metadata: Metadata = {
@@ -15,8 +12,13 @@ export const metadata: Metadata = {
     "Bang theo doi ung tuyen cho candidate voi trang thai, nguon apply va ghi chu follow-up.",
 };
 
-export default function CandidateApplicationsPage() {
-  const applications = getCandidateApplications(candidateSummary.id);
+export const instant = false;
+
+export default async function CandidateApplicationsPage(
+  props: PageProps<"/candidate/applications">,
+) {
+  const { applications } = await getCandidateDashboard();
+  const searchParams = await props.searchParams;
 
   return (
     <DashboardShell
@@ -28,6 +30,13 @@ export default function CandidateApplicationsPage() {
         { href: "/jobs", label: "Apply them", primary: true },
       ]}
     >
+      {searchParams.applied ? (
+        <div className="mb-6 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800">
+          Don ung tuyen da duoc tao trong runtime store. Hirer dashboard va job
+          detail cung da duoc cap nhat.
+        </div>
+      ) : null}
+
       <SectionCard
         title="Bang ung tuyen"
         description="Mac dinh uu tien hien nhung don moi nhat va cac job con dang mo."

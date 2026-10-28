@@ -1,21 +1,24 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import {
+  updateApplicationStatusAction,
+} from "@/app/actions/marketplace";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { SectionCard } from "@/components/section-card";
 import { StatusBadge } from "@/components/status-badge";
 import {
-  getAllJobs,
-  getApplicantsForJob,
-  getJobBySlug,
-} from "@/lib/marketplace-data";
+  getAllJobSlugs,
+  getHirerJobDetail,
+  getJobDetailBySlug,
+} from "@/lib/marketplace-repository";
 import { getApplicationStatusMeta, getJobStatusMeta } from "@/lib/status";
 
 export async function generateMetadata(
   props: PageProps<"/hirer/jobs/[slug]">,
 ): Promise<Metadata> {
   const { slug } = await props.params;
-  const job = getJobBySlug(slug);
+  const job = await getJobDetailBySlug(slug);
 
   return {
     title: job ? `${job.title} | Hirer dashboard` : "Job detail | Viec Online",
@@ -23,23 +26,25 @@ export async function generateMetadata(
   };
 }
 
-export function generateStaticParams() {
-  return getAllJobs().map((job) => ({
-    slug: job.slug,
-  }));
+export const instant = false;
+
+export async function generateStaticParams() {
+  const slugs = await getAllJobSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 export default async function HirerJobDetailPage(
   props: PageProps<"/hirer/jobs/[slug]">,
 ) {
   const { slug } = await props.params;
-  const job = getJobBySlug(slug);
+  const data = await getHirerJobDetail(slug);
+  const searchParams = await props.searchParams;
 
-  if (!job) {
+  if (!data) {
     notFound();
   }
 
-  const applicants = getApplicantsForJob(job.id);
+  const { job, applicants } = data;
   const jobMeta = getJobStatusMeta(job.status);
 
   return (
@@ -52,6 +57,12 @@ export default async function HirerJobDetailPage(
         { href: "/hirer/jobs/new", label: "Dang job moi", primary: true },
       ]}
     >
+      {searchParams.created ? (
+        <div className="mb-6 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800">
+          Job moi da duoc tao va dua vao queue moderation.
+        </div>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
         <SectionCard
           title="Tong quan bai dang"
@@ -158,6 +169,29 @@ export default async function HirerJobDetailPage(
                   <p className="mt-4 text-sm leading-7 text-slate-600">
                     {applicant.note}
                   </p>
+
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    {[
+                      ["reviewing", "Move to review"],
+                      ["shortlisted", "Shortlist"],
+                      ["interviewing", "Phong van"],
+                    ].map(([status, label]) => (
+                      <form key={status} action={updateApplicationStatusAction}>
+                        <input
+                          type="hidden"
+                          name="applicationId"
+                          value={applicant.id}
+                        />
+                        <input type="hidden" name="status" value={status} />
+                        <button
+                          type="submit"
+                          className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950 hover:text-slate-950"
+                        >
+                          {label}
+                        </button>
+                      </form>
+                    ))}
+                  </div>
                 </article>
               );
             })}

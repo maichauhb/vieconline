@@ -32,20 +32,27 @@ cp .env.example .env
 ```
 
 3. Cap nhat `DATABASE_URL` trong `.env` theo database cua ban.
+4. Chon che do du lieu:
 
-4. Generate Prisma client:
+```bash
+USE_MOCK_DATA="true"
+```
+
+- `true`: chay toan bo MVP bang runtime mock store, phu hop de demo nhanh
+- `false`: san sang noi sang Prisma/PostgreSQL khi da co DB that
+5. Generate Prisma client:
 
 ```bash
 npm run prisma:generate
 ```
 
-5. Chay migrate database:
+6. Chay migrate database:
 
 ```bash
 npm run prisma:migrate -- --name init
 ```
 
-6. Chay app:
+7. Chay app:
 
 ```bash
 npm run dev
@@ -87,6 +94,25 @@ npm run prisma:generate
 npm run prisma:migrate -- --name init
 npm run prisma:studio
 ```
+
+## Runtime mock mode
+
+App hien tai da co `server actions` cho:
+
+- cap nhat profile candidate
+- tao job moi
+- apply vao job
+- admin moderation job
+
+Mac dinh, he thong se chay bang `USE_MOCK_DATA="true"` de ban co the demo va
+kiem thu luong nghiep vu ngay ca khi chua co Postgres that dang chay.
+
+Khi muon chuyen sang DB that:
+
+1. Dat `USE_MOCK_DATA="false"`
+2. Cau hinh `DATABASE_URL`
+3. Chay migrate
+4. Hoan thien repository Prisma cho cac mutation/read path can thiet
 
 ## Huong mo rong tiep theo
 

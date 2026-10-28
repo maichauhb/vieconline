@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
+import { saveCandidateProfileAction } from "@/app/actions/marketplace";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { SectionCard } from "@/components/section-card";
-import { candidateSummary } from "@/lib/marketplace-data";
+import { getCandidateDashboard } from "@/lib/marketplace-repository";
 
 export const metadata: Metadata = {
   title: "Candidate onboarding | Viec Online",
@@ -17,7 +18,9 @@ const steps = [
   "Work preferences",
 ];
 
-export default function CandidateOnboardingPage() {
+export default async function CandidateOnboardingPage() {
+  const { candidate } = await getCandidateDashboard();
+
   return (
     <DashboardShell
       eyebrow="Candidate onboarding"
@@ -55,78 +58,99 @@ export default function CandidateOnboardingPage() {
 
         <SectionCard
           title="Profile form mock"
-          description="Cau truc form nay san sang de map 1-1 sang `CandidateProfile` trong Prisma schema."
+          description="Form nay da duoc noi vao server action va mock runtime store. Khi doi sang DB that chi can doi repository."
         >
-          <div className="grid gap-5 md:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">
-                Ho va ten
-              </label>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                {candidateSummary.name}
+          <form action={saveCandidateProfileAction} className="space-y-5">
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Ho va ten
+                </label>
+                <input
+                  name="name"
+                  defaultValue={candidate.name}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none ring-0"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Thanh pho
+                </label>
+                <input
+                  name="city"
+                  defaultValue={candidate.city}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none ring-0"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Headline
+                </label>
+                <input
+                  name="headline"
+                  defaultValue={candidate.headline}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none ring-0"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Ky nang chinh
+                </label>
+                <input
+                  name="skills"
+                  defaultValue={candidate.skills.join(", ")}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none ring-0"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Muc thu nhap mong muon
+                </label>
+                <input
+                  name="expectedSalary"
+                  defaultValue={candidate.expectedSalary}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none ring-0"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Portfolio
+                </label>
+                <input
+                  name="portfolioUrl"
+                  defaultValue={candidate.portfolioUrl}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none ring-0"
+                />
               </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">
-                Thanh pho
-              </label>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                {candidateSummary.city}
-              </div>
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium text-slate-700">
-                Headline
-              </label>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                {candidateSummary.headline}
-              </div>
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium text-slate-700">
-                Ky nang chinh
-              </label>
-              <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                {candidateSummary.skills.map((skill) => (
-                  <span
-                    key={skill}
-                    className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600"
+
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-slate-700">Work mode</p>
+              <div className="flex flex-wrap gap-3">
+                {["Remote", "Hybrid", "Onsite"].map((mode) => (
+                  <label
+                    key={mode}
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700"
                   >
-                    {skill}
-                  </span>
+                    <input
+                      type="checkbox"
+                      name="workModes"
+                      value={mode}
+                      defaultChecked={candidate.workModes.includes(mode)}
+                    />
+                    {mode}
+                  </label>
                 ))}
               </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">
-                Muc thu nhap mong muon
-              </label>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                {candidateSummary.expectedSalary}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">
-                Work mode
-              </label>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                {candidateSummary.workModes.join(", ")}
-              </div>
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium text-slate-700">
-                Portfolio
-              </label>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                {candidateSummary.portfolioUrl}
-              </div>
-            </div>
-          </div>
 
-          <div className="mt-6 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 p-5 text-sm leading-7 text-emerald-800">
-            Buoc tiep theo la doi block form mock nay thanh form submit that
-            bang server action, validate va luu vao `CandidateProfile`.
-          </div>
+            <button
+              type="submit"
+              className="inline-flex rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              Luu profile
+            </button>
+          </form>
         </SectionCard>
       </div>
     </DashboardShell>

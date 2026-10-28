@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 
+import { moderateJobAction } from "@/app/actions/marketplace";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { SectionCard } from "@/components/section-card";
 import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
-import { adminMetrics, adminReports, getAllJobs } from "@/lib/marketplace-data";
+import { getAdminDashboard } from "@/lib/marketplace-repository";
 import { getJobStatusMeta } from "@/lib/status";
 
 export const metadata: Metadata = {
@@ -13,10 +14,16 @@ export const metadata: Metadata = {
     "Khu moderation cho admin duyet job, xem report va theo doi chat luong marketplace.",
 };
 
-export default function AdminJobsPage() {
-  const jobs = getAllJobs().filter(
+export const instant = false;
+
+export default async function AdminJobsPage(
+  props: PageProps<"/admin/jobs">,
+) {
+  const data = await getAdminDashboard();
+  const jobs = data.jobs.filter(
     (job) => job.status === "pending" || job.status === "rejected",
   );
+  const searchParams = await props.searchParams;
 
   return (
     <DashboardShell
@@ -28,8 +35,14 @@ export default function AdminJobsPage() {
         { href: "/jobs", label: "Xem public listing", primary: true },
       ]}
     >
+      {searchParams.updated ? (
+        <div className="mb-6 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800">
+          Moderation action da duoc ap dung cho job.
+        </div>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-4">
-        {adminMetrics.map((item) => (
+        {data.metrics.map((item) => (
           <StatCard
             key={item.label}
             label={item.label}
@@ -89,6 +102,29 @@ export default function AdminJobsPage() {
                       </span>
                     </div>
                   </div>
+
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <form action={moderateJobAction}>
+                      <input type="hidden" name="slug" value={job.slug} />
+                      <input type="hidden" name="status" value="published" />
+                      <button
+                        type="submit"
+                        className="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                      >
+                        Duyet job
+                      </button>
+                    </form>
+                    <form action={moderateJobAction}>
+                      <input type="hidden" name="slug" value={job.slug} />
+                      <input type="hidden" name="status" value="rejected" />
+                      <button
+                        type="submit"
+                        className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300"
+                      >
+                        Tu choi
+                      </button>
+                    </form>
+                  </div>
                 </article>
               );
             })}
@@ -100,7 +136,7 @@ export default function AdminJobsPage() {
           description="Admin can track cac job bi report de tranh spam va mat trust."
         >
           <div className="space-y-4">
-            {adminReports.map((report) => (
+            {data.reports.map((report) => (
               <article
                 key={report.id}
                 className="rounded-[1.5rem] border border-slate-200 p-5"

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { SectionCard } from "@/components/section-card";
 import { StatusBadge } from "@/components/status-badge";
-import { getAllJobs } from "@/lib/marketplace-data";
+import { getHirerDashboard } from "@/lib/marketplace-repository";
 import { getJobStatusMeta } from "@/lib/status";
 
 export const metadata: Metadata = {
@@ -13,8 +13,8 @@ export const metadata: Metadata = {
     "Danh sach job cua nha tuyen dung voi status, applicants, referral traction va diem dieu huong sang job detail.",
 };
 
-export default function HirerJobsPage() {
-  const jobs = getAllJobs();
+export default async function HirerJobsPage() {
+  const { jobs } = await getHirerDashboard();
 
   return (
     <DashboardShell
